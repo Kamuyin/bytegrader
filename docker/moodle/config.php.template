@@ -1,0 +1,75 @@
+<?php
+// =============================================================================
+// Moodle Configuration Template for Docker
+// This file is processed by the entrypoint script to create config.php
+// =============================================================================
+
+unset($CFG);
+global $CFG;
+$CFG = new stdClass();
+
+// Database configuration (from environment variables)
+$CFG->dbtype    = getenv('MOODLE_DB_TYPE') ?: 'pgsql';
+$CFG->dblibrary = 'native';
+$CFG->dbhost    = getenv('MOODLE_DB_HOST') ?: 'moodle-db';
+$CFG->dbname    = getenv('MOODLE_DB_NAME') ?: 'moodle';
+$CFG->dbuser    = getenv('MOODLE_DB_USER') ?: 'moodle';
+$CFG->dbpass    = getenv('MOODLE_DB_PASSWORD') ?: 'moodle_password';
+$CFG->prefix    = 'mdl_';
+$CFG->dboptions = array(
+    'dbpersist' => 0,
+    'dbport'    => getenv('MOODLE_DB_PORT') ?: '5432',
+    'dbsocket'  => '',
+);
+
+// WWW root (external URL)
+$wwwhost = getenv('MOODLE_WWW_HOST') ?: 'localhost';
+$wwwport = getenv('MOODLE_WWW_PORT') ?: '8080';
+$wwwscheme = getenv('MOODLE_WWW_SCHEME') ?: 'http';
+
+if ($wwwport == '80' || $wwwport == '443') {
+    $CFG->wwwroot = "{$wwwscheme}://{$wwwhost}";
+} else {
+    $CFG->wwwroot = "{$wwwscheme}://{$wwwhost}:{$wwwport}";
+}
+
+// Data directory
+$CFG->dataroot  = '/var/www/moodledata';
+$CFG->admin     = 'admin';
+
+// Directory permissions
+$CFG->directorypermissions = 02777;
+
+// Session handling
+$CFG->session_handler_class = '\core\session\file';
+$CFG->session_file_save_path = $CFG->dataroot . '/sessions';
+
+// Timezone
+date_default_timezone_set(getenv('TZ') ?: 'UTC');
+
+// Reverse proxy settings (if behind nginx/traefik)
+if (getenv('MOODLE_REVERSEPROXY') === 'true') {
+    $CFG->reverseproxy = true;
+}
+if (getenv('MOODLE_SSLPROXY') === 'true') {
+    $CFG->sslproxy = true;
+}
+
+// Development/Debug settings
+if (getenv('MOODLE_DEBUG') === 'true') {
+    $CFG->debug = E_ALL | E_STRICT;
+    $CFG->debugdisplay = 1;
+} else {
+    $CFG->debug = 0;
+    $CFG->debugdisplay = 0;
+}
+
+// Cron settings
+$CFG->cronclionly = true;
+
+// Password policy - relaxed for development
+if (getenv('MOODLE_SKIP_PASSWORD_POLICY') === 'true') {
+    $CFG->passwordpolicy = false;
+}
+
+require_once(__DIR__ . '/lib/setup.php');

@@ -1,0 +1,8 @@
+# LTI Keys (generated, contain secrets)
+keys/private.pem
+keys/public.pem
+keys/backup_*
+
+# Local configuration backups
+*.bak
+*.backup
