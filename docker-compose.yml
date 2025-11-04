@@ -1,0 +1,225 @@
+services:
+  moodle-db:
+    image: postgres:16-alpine
+    container_name: bytegrader-moodle-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${MOODLE_DB_USER:-moodle}
+      POSTGRES_PASSWORD: ${MOODLE_DB_PASSWORD:-moodle_password}
+      POSTGRES_DB: ${MOODLE_DB_NAME:-moodle}
+    volumes:
+      - moodle_db_data:/var/lib/postgresql/data
+    networks:
+      - bytegrader-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MOODLE_DB_USER:-moodle} -d ${MOODLE_DB_NAME:-moodle}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  bytegrader-db:
+    image: postgres:16-alpine
+    container_name: bytegrader-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${BYTEGRADER_DB_USER:-bytegrader}
+      POSTGRES_PASSWORD: ${BYTEGRADER_DB_PASSWORD:-bytegrader_password}
+      POSTGRES_DB: ${BYTEGRADER_DB_NAME:-bytegrader}
+    volumes:
+      - bytegrader_db_data:/var/lib/postgresql/data
+    networks:
+      - bytegrader-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BYTEGRADER_DB_USER:-bytegrader} -d ${BYTEGRADER_DB_NAME:-bytegrader}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  moodle:
+    build:
+      context: ./docker/moodle
+      dockerfile: Dockerfile
+      args:
+        MOODLE_VERSION: ${MOODLE_VERSION:-MOODLE_405_STABLE}
+    container_name: bytegrader-moodle
+    restart: unless-stopped
+    depends_on:
+      moodle-db:
+        condition: service_healthy
+    environment:
+      # Database
+      MOODLE_DB_TYPE: pgsql
+      MOODLE_DB_HOST: moodle-db
+      MOODLE_DB_PORT: 5432
+      MOODLE_DB_USER: ${MOODLE_DB_USER:-moodle}
+      MOODLE_DB_PASSWORD: ${MOODLE_DB_PASSWORD:-moodle_password}
+      MOODLE_DB_NAME: ${MOODLE_DB_NAME:-moodle}
+      
+      # Moodle
+      MOODLE_WWW_HOST: ${MOODLE_HOST:-localhost}
+      MOODLE_WWW_PORT: ${MOODLE_PORT:-8080}
+      MOODLE_WWW_SCHEME: ${MOODLE_SCHEME:-http}
+      
+      # Admin
+      MOODLE_ADMIN_USER: ${MOODLE_ADMIN_USER:-admin}
+      MOODLE_ADMIN_PASSWORD: ${MOODLE_ADMIN_PASSWORD:-Admin123!}
+      MOODLE_ADMIN_EMAIL: ${MOODLE_ADMIN_EMAIL:-admin@example.com}
+      MOODLE_SITE_NAME: ${MOODLE_SITE_NAME:-BYTEGrader LMS}
+      MOODLE_SITE_SHORTNAME: ${MOODLE_SITE_SHORTNAME:-bytegrader}
+      
+      # Etc
+      MOODLE_DEBUG: ${MOODLE_DEBUG:-false}
+      MOODLE_SKIP_PASSWORD_POLICY: "true"
+      
+      TZ: ${TIMEZONE:-UTC}
+    volumes:
+      - moodle_data:/var/www/html
+      - moodle_moodledata:/var/www/moodledata
+
+      - ./docker/keys:/app/keys:ro
+    ports:
+      - "${MOODLE_PORT:-8080}:80"
+    networks:
+      - bytegrader-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/login/index.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+
+  moodle-lti-init:
+    image: postgres:16-alpine
+    container_name: bytegrader-moodle-lti-init
+    depends_on:
+      moodle:
+        condition: service_healthy
+    environment:
+      PGHOST: moodle-db
+      PGPORT: 5432
+      PGUSER: ${MOODLE_DB_USER:-moodle}
+      PGPASSWORD: ${MOODLE_DB_PASSWORD:-moodle_password}
+      PGDATABASE: ${MOODLE_DB_NAME:-moodle}
+      
+      LTI_TOOL_NAME: ${LTI_TOOL_NAME:-BYTEGrader}
+      LTI_TOOL_URL: ${LTI_TOOL_URL:-http://jupyterhub:8000}
+      LTI_CLIENT_ID: ${LTI_CLIENT_ID:-bytegrader-lti-client}
+      LTI_PUBLIC_KEY_FILE: /app/keys/public.pem
+      JUPYTERHUB_EXTERNAL_URL: ${JUPYTERHUB_EXTERNAL_URL:-http://localhost:8000}
+    volumes:
+      - ./docker/scripts/setup-lti.sh:/app/setup-lti.sh:ro
+      - ./docker/keys:/app/keys:ro
+      - lti_config:/app/lti-config
+    entrypoint: ["/bin/sh", "/app/setup-lti.sh"]
+    networks:
+      - bytegrader-network
+    restart: "no"
+
+  jupyterhub:
+    build:
+      context: ./docker/jupyterhub
+      dockerfile: Dockerfile
+    container_name: bytegrader-jupyterhub
+    restart: unless-stopped
+    depends_on:
+      bytegrader-db:
+        condition: service_healthy
+    environment:
+      JUPYTERHUB_CRYPT_KEY: ${JUPYTERHUB_CRYPT_KEY:-}
+      CONFIGPROXY_AUTH_TOKEN: ${CONFIGPROXY_AUTH_TOKEN:-}
+      
+      DOCKER_NETWORK_NAME: bytegrader-network
+      DOCKER_NOTEBOOK_IMAGE: ${NOTEBOOK_IMAGE:-quay.io/jupyter/base-notebook:latest}
+      
+      BYTEGRADER_SERVICE_URL: http://bytegrader:12345
+      BYTEGRADER_SERVICE_TOKEN: ${BYTEGRADER_API_TOKEN:-bytegrader-secret-token}
+      
+      JUPYTERHUB_DB_URL: postgresql://${BYTEGRADER_DB_USER:-bytegrader}:${BYTEGRADER_DB_PASSWORD:-bytegrader_password}@bytegrader-db:5432/${BYTEGRADER_DB_NAME:-bytegrader}
+      
+      LTI_CLIENT_ID: ${LTI_CLIENT_ID:-bytegrader-lti-client}
+      LTI_ISSUER: ${LTI_ISSUER:-http://moodle:8080}
+      LTI_AUTHORIZE_URL: ${LTI_AUTHORIZE_URL:-http://moodle:8080/mod/lti/auth.php}
+      LTI_TOKEN_URL: ${LTI_TOKEN_URL:-http://moodle:8080/mod/lti/token.php}
+      LTI_JWKS_URL: ${LTI_JWKS_URL:-http://moodle:8080/mod/lti/certs.php}
+    volumes:
+      - jupyterhub_data:/srv/jupyterhub
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker/jupyterhub/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro
+      - ./docker/keys:/srv/jupyterhub/keys:ro
+      - lti_config:/srv/jupyterhub/lti-config:ro
+    ports:
+      - "${JUPYTERHUB_PORT:-8000}:8000"
+    networks:
+      - bytegrader-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/hub/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  bytegrader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bytegrader-service
+    restart: unless-stopped
+    depends_on:
+      bytegrader-db:
+        condition: service_healthy
+      jupyterhub:
+        condition: service_healthy
+    environment:
+      JUPYTERHUB_SERVICE_PREFIX: /services/bytegrader/
+      JUPYTERHUB_API_TOKEN: ${BYTEGRADER_API_TOKEN:-bytegrader-secret-token}
+      JUPYTERHUB_API_URL: http://jupyterhub:8000/hub/api
+      JUPYTERHUB_SERVICE_URL: http://bytegrader:12345
+      
+      BYTEGRADER_DB_URI: postgresql://${BYTEGRADER_DB_USER:-bytegrader}:${BYTEGRADER_DB_PASSWORD:-bytegrader_password}@bytegrader-db:5432/${BYTEGRADER_DB_NAME:-bytegrader}
+      
+      LTI_ENABLED: ${LTI_ENABLED:-true}
+      LTI_CLIENT_ID: ${LTI_CLIENT_ID:-bytegrader-lti-client}
+      LTI_PLATFORM: ${LTI_PLATFORM:-moodle}
+      LTI_LMS_URL: http://moodle:8080
+      LTI_TOKEN_URL: http://moodle:8080/mod/lti/token.php
+      LTI_NRPS_URL: http://moodle:8080/mod/lti/services.php
+      LTI_KEY_PATH: /app/keys/private.pem
+      
+      AUTOGRADE_ENABLED: ${AUTOGRADE_ENABLED:-true}
+      AUTOGRADE_WORKERS: ${AUTOGRADE_WORKERS:-4}
+      AUTOGRADE_EXECUTOR: ${AUTOGRADE_EXECUTOR:-bytegrader.autograde.executors.simple.SimpleExecutor}
+    volumes:
+      - bytegrader_assets:/app/assets
+      - ./docker/bytegrader/bytegrader_config.py:/app/config/bytegrader_config.py:ro
+      - ./docker/keys:/app/keys:ro
+    networks:
+      - bytegrader-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:12345/auth/whoami"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  bytegrader-network:
+    name: bytegrader-network
+    driver: bridge
+
+volumes:
+  moodle_db_data:
+    name: bytegrader-moodle-db-data
+  moodle_data:
+    name: bytegrader-moodle-data
+  moodle_moodledata:
+    name: bytegrader-moodle-moodledata
+  bytegrader_db_data:
+    name: bytegrader-db-data
+  bytegrader_assets:
+    name: bytegrader-assets
+  jupyterhub_data:
+    name: bytegrader-jupyterhub-data
+  lti_config:
+    name: bytegrader-lti-config
