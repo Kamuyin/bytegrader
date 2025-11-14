@@ -1,7 +1,7 @@
-from .mock import MockExecutor
-from .simple import SimpleExecutor
+# from .simple import SimpleExecutor
 
-__all__ = ["MockExecutor", "SimpleExecutor"]
+# __all__ = ["SimpleExecutor"]
+_all__ = []
 
 try:
     from .wasm import WasmExecutor

@@ -7,7 +7,7 @@ from traitlets.config import Configurable
 
 from bytegrader.autograde.executors.base import BaseExecutor
 
-# !!! Must not be used in production environments !!!
+# ! Only for demonstration purposes; must not be used in production due to security risks.
 class SimpleExecutor(BaseExecutor, Configurable):
 
     def __init__(self, **kwargs):

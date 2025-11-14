@@ -5,7 +5,6 @@ from typing import List
 
 from apscheduler.job import Job
 
-from bytegrader.autograde.executors.mock import MockExecutor
 from bytegrader.autograde.queue import JobQueue
 from bytegrader.autograde.worker import AutogradingWorker, AutogradingJob
 from bytegrader.config.config import BYTEGraderConfig
