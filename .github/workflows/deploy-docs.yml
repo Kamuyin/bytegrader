@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  INSTANCE: 'docs/hi'
+  INSTANCE: 'Writerside/hi'
   DOCKER_VERSION: 'latest'
 
 jobs:
