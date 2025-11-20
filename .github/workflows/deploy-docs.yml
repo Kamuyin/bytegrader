@@ -52,7 +52,9 @@ jobs:
           path: artifacts
 
       - name: Unzip documentation archive
-        run: unzip -O UTF-8 -qq artifacts/**/*.zip -d dir
+        run: |
+          mkdir -p dir
+          unzip -O UTF-8 -qq artifacts/*-all.zip -d dir
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v4
