@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "composite": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "incremental": true,
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmitOnError": false,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "preserveWatchOutput": true,
+    "resolveJsonModule": true,
+    "outDir": "lib",
+    "rootDir": "src",
+    "strict": false,
+    "strictNullChecks": false,
+    "target": "es2020",
+    "types": [],
+    "skipLibCheck": true,
+    "allowJs": true
+  },
+  "include": [
+    "src/**/*",
+    "src/types/*.d.ts",
+    "style/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
