@@ -11,6 +11,32 @@ BYTEGrader consists of two main components:
 
 The system supports LTI 1.3 integration with platforms like Moodle, allowing grade synchronization and user provisioning through LTI Advantage services (Assignment and Grade Services, Names and Role Provisioning Service).
 
+## Showcase
+
+### Courses
+
+![Courses](docs/public/showcase_courses.png)
+
+### Assignments
+
+![Assignments](docs/public/showcase_assignments.png)
+
+### Create Assignment (Step 1)
+
+![Create assignment step 1](docs/public/showcase_create_1.png)
+
+### Create Assignment (Step 2)
+
+![Create assignment step 2](docs/public/showcase_create_2.png)
+
+### Create Assignment (Step 3)
+
+![Create assignment step 3](docs/public/showcase_create_3.png)
+
+### Graded Submission
+
+![Graded submission](docs/public/showcase_graded.png)
+
 ## Key Features
 
 ### Assignment Management
