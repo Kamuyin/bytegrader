@@ -80,7 +80,7 @@ class LabAssignmentDeleteHandler(LabBaseHandler):
                 raise HTTPError(status_code=500, log_message=error_msg)
 
             self.set_status(200)
-            self.write(LabAPIResponse.success_response({}).model_dump_json(
+            self.write(LabAPIResponse.success_response({}).json(
                 by_alias=True))
         except HTTPError:
             raise
