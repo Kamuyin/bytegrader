@@ -4,7 +4,8 @@ export const COMMAND_IDS = {
   openCoursesList: 'bytegrader:open-courses-list',
   openAssignmentsList: 'bytegrader:open-assignments-list',
   openInstructorTools: 'bytegrader:open-instructor-tools',
-  openStudentDashboard: 'bytegrader:open-student-dashboard'
+  openStudentDashboard: 'bytegrader:open-student-dashboard',
+  toggleAssignmentCreationMode: 'bytegrader:toggle-assignment-creation-mode'
 } as const;
 
 export const ASSIGNMENT_STATUS = {

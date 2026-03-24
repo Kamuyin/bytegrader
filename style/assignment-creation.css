@@ -1,0 +1,97 @@
+.bg-assignment-points-label {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: var(--jp-ui-font-size1, 13px);
+  font-weight: 600;
+  color: var(--jp-ui-font-color1);
+  white-space: nowrap;
+}
+
+.bg-cell-strip {
+  display: flex;
+  order: -1;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  background: var(--jp-layout-color2, #f5f5f5);
+  border-bottom: 1px solid var(--jp-border-color2, #e0e0e0);
+  font-family: var(--jp-ui-font-family);
+  font-size: 12px;
+  color: var(--jp-ui-font-color1, #424242);
+  flex-wrap: wrap;
+}
+
+.bg-cell-strip-type-label {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.bg-cell-strip-select {
+  padding: 2px 6px;
+  border: 1px solid var(--jp-border-color1, #bdbdbd);
+  border-radius: 4px;
+  background: var(--jp-layout-color1, #fff);
+  font-size: 12px;
+  color: var(--jp-ui-font-color0, #212121);
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.bg-cell-strip-select:focus {
+  outline: 2px solid var(--jp-brand-color1, #1976d2);
+  outline-offset: -1px;
+}
+
+.bg-cell-strip-id-group,
+.bg-cell-strip-points-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bg-cell-strip-label {
+  font-weight: 500;
+  color: var(--jp-ui-font-color2, #757575);
+}
+
+.bg-cell-strip-id-input {
+  width: 120px;
+  padding: 2px 6px;
+  border: 1px solid var(--jp-border-color1, #bdbdbd);
+  border-radius: 4px;
+  background: var(--jp-layout-color1, #fff);
+  font-size: 12px;
+  font-family: var(--jp-code-font-family, monospace);
+  color: var(--jp-ui-font-color0, #212121);
+}
+
+.bg-cell-strip-points-input {
+  width: 60px;
+  padding: 2px 6px;
+  border: 1px solid var(--jp-border-color1, #bdbdbd);
+  border-radius: 4px;
+  background: var(--jp-layout-color1, #fff);
+  font-size: 12px;
+  color: var(--jp-ui-font-color0, #212121);
+}
+
+.bg-cell-strip-id-input:focus,
+.bg-cell-strip-points-input:focus {
+  outline: 2px solid var(--jp-brand-color1, #1976d2);
+  outline-offset: -1px;
+}
+
+.bg-cell-strip-lock {
+  font-size: 14px;
+}
+
+.bg-assignment-mode-active .jp-Cell {
+  transition: border-left 0.15s ease;
+}
+
+.jp-NotebookPanel:not(.bg-assignment-mode-active) .bg-cell-strip {
+  display: none !important;
+}
+
+

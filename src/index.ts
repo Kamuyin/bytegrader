@@ -2,18 +2,20 @@ import { ILabShell, ILayoutRestorer, JupyterFrontEnd, JupyterFrontEndPlugin } fr
 import { ICommandPalette, MainAreaWidget, WidgetTracker } from "@jupyterlab/apputils";
 import { PageConfig } from "@jupyterlab/coreutils";
 import { IMainMenu } from '@jupyterlab/mainmenu';
+import { INotebookTracker } from '@jupyterlab/notebook';
 import { INotebookShell } from "@jupyter-notebook/application";
 import { INotebookTree } from "@jupyter-notebook/tree";
 import { Menu } from '@lumino/widgets';
 import { CoursesListWidget } from "./widgets/CoursesListWidget";
 import { AssignmentsListWidget } from "./widgets/AssignmentsListWidget";
+import { AssignmentModeManager } from './assignment-creation';
 import { PLUGIN_ID, COMMAND_IDS } from './constants';
 
 const bytegraderPlugin: JupyterFrontEndPlugin<void> = {
     id: PLUGIN_ID,
     autoStart: true,
     requires: [IMainMenu],
-    optional: [ICommandPalette, ILabShell, INotebookShell, ILayoutRestorer, INotebookTree],
+    optional: [ICommandPalette, ILabShell, INotebookShell, ILayoutRestorer, INotebookTree, INotebookTracker],
     activate: (
         app: JupyterFrontEnd,
         mainMenu: IMainMenu,
@@ -21,7 +23,8 @@ const bytegraderPlugin: JupyterFrontEndPlugin<void> = {
         labShell: ILabShell | null,
         notebookShell: INotebookShell | null,
         restorer: ILayoutRestorer | null,
-        notebookTree: INotebookTree | null
+        notebookTree: INotebookTree | null,
+        notebookTracker: INotebookTracker | null
     ) => {
 
         let isLabEnvironment = false;
@@ -127,6 +130,22 @@ const bytegraderPlugin: JupyterFrontEndPlugin<void> = {
             }
         });
 
+        let modeManager: AssignmentModeManager | null = null;
+
+        if (notebookTracker) {
+            modeManager = new AssignmentModeManager(notebookTracker);
+
+            app.commands.addCommand(COMMAND_IDS.toggleAssignmentCreationMode, {
+                label: 'Assignment Creation Mode',
+                caption: 'Toggle assignment creation mode to configure cell grading metadata',
+                isToggled: () => modeManager?.isActive ?? false,
+                isEnabled: () => notebookTracker.currentWidget !== null,
+                execute: () => {
+                    modeManager?.toggle();
+                }
+            });
+        }
+
         const bytegraderMenu = new Menu({ commands: app.commands });
         bytegraderMenu.id = 'jp-mainmenu-bytegrader';
         bytegraderMenu.title.label = 'BYTE Grader';
@@ -139,6 +158,14 @@ const bytegraderPlugin: JupyterFrontEndPlugin<void> = {
 
             bytegraderMenu.addItem({ 
                 command: COMMAND_IDS.openAssignmentsList,
+                type: 'command'
+            });
+        }
+
+        if (modeManager && (isLabEnvironment || isNotebookEditPage)) {
+            bytegraderMenu.addItem({ type: 'separator' });
+            bytegraderMenu.addItem({
+                command: COMMAND_IDS.toggleAssignmentCreationMode,
                 type: 'command'
             });
         }
@@ -158,6 +185,13 @@ const bytegraderPlugin: JupyterFrontEndPlugin<void> = {
             palette.addItem({
                 command: COMMAND_IDS.openInstructorTools,
                 category
+            });
+        }
+
+        if (palette && modeManager) {
+            palette.addItem({
+                command: COMMAND_IDS.toggleAssignmentCreationMode,
+                category: 'BYTE Grader'
             });
         }
 

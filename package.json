@@ -17,6 +17,7 @@
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "style": "style/index.css",
   "scripts": {
     "build": "jlpm build:lib && jlpm build:labextension:dev",
     "build:prod": "jlpm clean && jlpm build:lib && jlpm build:labextension",
@@ -96,7 +97,8 @@
       }
     },
     "extension": true,
-    "outputDir": "bytegrader/extensions/labextension"
+    "outputDir": "bytegrader/extensions/labextension",
+    "schemaDir": ""
   },
   "packageManager": "yarn@3.5.0"
 }
