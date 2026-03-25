@@ -124,6 +124,9 @@ class LabAssignmentService:
                         logging.warning(f"Skipping file due to path traversal concern: {filename}")
                         continue
 
+                    if solution and os.path.exists(safe_path):
+                        continue
+
                     os.makedirs(os.path.dirname(safe_path), exist_ok=True)
 
                     is_binary = name == 'asset' and not headers.get('content-type', '').startswith(
