@@ -119,7 +119,7 @@ class AssignmentService:
                 is_task = nbgrader_meta.get('task', False)
                 max_score = nbgrader_meta.get('points', 0.0) if is_grade else 0.0
 
-                cell_name = nbgrader_meta.get('name', None)
+                cell_name = nbgrader_meta.get('grade_id', None)
 
                 if isinstance(cell_src, list):
                     cell_src = "".join(cell_src)
@@ -233,15 +233,6 @@ class AssignmentService:
                 else:
                     nb_cell = nbformat.v4.new_code_cell(src)
 
-                nbgrader_meta = {
-                    'grade': cell.is_grade,
-                    'solution': cell.is_solution,
-                    'locked': cell.is_locked,
-                    'task': cell.is_task,
-                    'points': cell.max_score,
-                    'grade_id': cell.name,
-                }
-
                 metadata = {}
                 if cell.meta:
                     try:
@@ -250,7 +241,16 @@ class AssignmentService:
                         print(f"Warning: Could not parse metadata for cell {cell.id}, using empty metadata")
                         metadata = {}
 
-                metadata['nbgrader'] = nbgrader_meta
+                if cell.is_grade or cell.is_solution or cell.is_task or cell.is_locked:
+                    metadata['nbgrader'] = {
+                        'schema_version': 3,
+                        'grade': cell.is_grade,
+                        'solution': cell.is_solution,
+                        'locked': cell.is_locked,
+                        'task': cell.is_task,
+                        'points': cell.max_score,
+                        'grade_id': cell.name or cell.id,
+                    }
 
                 nb_cell.metadata = metadata
                 nb_cell.id = cell.id
