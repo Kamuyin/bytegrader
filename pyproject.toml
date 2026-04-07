@@ -58,7 +58,14 @@ dependencies = [
     "apscheduler>=3.11.0",
 ]
 
+[tool.uv.workspace]
+members = [
+    "executors/systemd",
+]
+
 [project.optional-dependencies]
+systemd = ["bytegrader-executor-systemd"]
+
 wasm-executor = [
     "wasmtime>=35.0.0",
 ]
@@ -80,6 +87,9 @@ bytegrader = "bytegrader.cli:main"
 
 [project.entry-points."jupyter_serverproxy_servers"]
 bytegrader = "bytegrader.extensions.hub:setup_server_proxy"
+
+[tool.uv.sources]
+bytegrader-executor-systemd = { workspace = true }
 
 [tool.hatch.build]
 artifacts = [

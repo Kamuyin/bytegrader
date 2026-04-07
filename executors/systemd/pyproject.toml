@@ -1,0 +1,22 @@
+[project]
+name = "bytegrader-executor-systemd"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "bytegrader"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+bytegrader = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["bytegrader_systemd"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "bytegrader_systemd",
+]
