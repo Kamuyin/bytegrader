@@ -48,8 +48,11 @@ class SystemdExecutor(BaseExecutor, Configurable):
         }
         bundle.write_notebook(notebook, cell_ids)
         bundle.write_manifest(metadata)
+        bundle.prepare_result_file()
 
         unit_name = cfg.unit_name_template.format(job_id=bundle.job_id)
+
+        bundle_mount = "/srv/bytegrader-bundle"
 
         env_dir = ensure_private_directory(Path(cfg.runtime_directory_root))
         env_file = render_environment_file(
@@ -57,12 +60,12 @@ class SystemdExecutor(BaseExecutor, Configurable):
             unit_name,
             {
                 "BYTEGRADER_JOB_ID": bundle.job_id,
-                "BYTEGRADER_BUNDLE": str(bundle.bundle_dir),
+                "BYTEGRADER_BUNDLE": bundle_mount,
             },
         )
 
         exec_cmd = shlex.split(cfg.runner_entrypoint)
-        exec_cmd.extend([str(bundle.bundle_dir), "--result", cfg.result_filename])
+        exec_cmd.extend([bundle_mount, "--result", cfg.result_filename])
 
         properties = {
             "RuntimeDirectory": [bundle.job_id],
@@ -74,10 +77,10 @@ class SystemdExecutor(BaseExecutor, Configurable):
             "ProtectHome": "true",
             "NoNewPrivileges": "true",
             "RestrictAddressFamilies": "AF_INET AF_INET6",
+            "BindPaths": [f"{bundle.bundle_dir}:{bundle_mount}"],
         }
 
-        workdir = Path(cfg.working_directory)
-        workdir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        workdir = Path(f"/run/{bundle.job_id}")
 
         command = build_systemd_run_command(
             unit_name=unit_name,

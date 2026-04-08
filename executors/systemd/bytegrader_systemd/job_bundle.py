@@ -36,7 +36,7 @@ class JobBundle:
 
     def initialise(self) -> None:
         self.bundle_dir.mkdir(parents=True, exist_ok=True)
-        os.chmod(self.bundle_dir, 0o700)
+        os.chmod(self.bundle_dir, 0o755)
 
     def write_notebook(self, notebook: nbformat.NotebookNode, cell_ids: Iterable[str] | None = None) -> None:
         filtered = notebook
@@ -44,9 +44,15 @@ class JobBundle:
             filtered = copy.deepcopy(notebook)
             filtered.cells = [cell for cell in filtered.cells if getattr(cell, "id", None) in cell_ids]
         nbformat.write(filtered, self.notebook_path)
+        os.chmod(self.notebook_path, 0o644)
 
     def write_manifest(self, metadata: Mapping[str, object]) -> None:
         self.manifest_path.write_text(json.dumps(metadata), encoding="utf-8")
+        os.chmod(self.manifest_path, 0o644)
+
+    def prepare_result_file(self) -> None:
+        self.result_path.write_text("{}", encoding="utf-8")
+        os.chmod(self.result_path, 0o666)
 
     def read_manifest(self) -> Mapping[str, object] | None:
         if not self.manifest_path.exists():
