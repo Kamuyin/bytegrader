@@ -52,7 +52,7 @@ class SystemdExecutor(BaseExecutor, Configurable):
 
         unit_name = cfg.unit_name_template.format(job_id=bundle.job_id)
 
-        bundle_mount = "/srv/bytegrader-bundle"
+        bundle_mount = "/tmp/bundle"
 
         env_dir = ensure_private_directory(Path(cfg.runtime_directory_root))
         env_file = render_environment_file(

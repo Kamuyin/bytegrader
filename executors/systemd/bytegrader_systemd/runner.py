@@ -104,7 +104,18 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
     args = parse_args()
-    run_notebook(args.bundle, args.result)
+    result_path = args.bundle / args.result
+    try:
+        run_notebook(args.bundle, args.result)
+    except Exception as exc:
+        logging.exception("Runner failed with unhandled exception")
+        try:
+            result_path.write_text(
+                json.dumps({"cells": {}, "status": "error", "error": {"message": str(exc)}}),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
