@@ -4,6 +4,14 @@ from traitlets.config import Configurable
 
 class SystemdExecutorConfig(Configurable):
 
+    user_mode = Bool(
+        False,
+        help=(
+            "Runs systemd commands with --user. Requires an active user session "
+            "(e.g., via 'loginctl enable-linger <user>')."
+        ),
+    ).tag(config=True)
+
     unit_name_template = Unicode(
         "bytegrader-{job_id}",
         help=(

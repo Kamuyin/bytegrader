@@ -47,15 +47,18 @@ def build_systemd_run_command(
     properties: MutableMapping[str, Iterable[str] | str],
     env_file: Path | None = None,
     slice_name: str | None = None,
+    user_mode: bool = False,
 ) -> list[str]:
 
-    cmd: list[str] = [
-        "systemd-run",
+    cmd: list[str] = ["systemd-run"]
+    if user_mode:
+        cmd.append("--user")
+    cmd.extend([
         "--unit",
         unit_name,
         "--working-directory",
         str(workdir),
-    ]
+    ])
 
     if slice_name:
         cmd.append(f"--slice={slice_name}")
@@ -86,15 +89,17 @@ async def launch_transient_unit(command: Sequence[str]) -> int:
     return await process.wait()
 
 
-async def query_unit_state(unit_name: str) -> str:
+async def query_unit_state(unit_name: str, *, user_mode: bool = False) -> str:
 
-    show_cmd = [
-        "systemctl",
+    show_cmd = ["systemctl"]
+    if user_mode:
+        show_cmd.append("--user")
+    show_cmd.extend([
         "show",
         unit_name,
         "--property=SubState",
         "--value",
-    ]
+    ])
     process = await asyncio.create_subprocess_exec(
         *show_cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -106,21 +111,27 @@ async def query_unit_state(unit_name: str) -> str:
     return stdout.decode().strip() or "unknown"
 
 
-async def stop_unit(unit_name: str) -> int:
+async def stop_unit(unit_name: str, *, user_mode: bool = False) -> int:
 
-    process = await asyncio.create_subprocess_exec("systemctl", "stop", unit_name)
+    cmd = ["systemctl"]
+    if user_mode:
+        cmd.append("--user")
+    cmd.extend(["stop", unit_name])
+    process = await asyncio.create_subprocess_exec(*cmd)
     return await process.wait()
 
 
-async def fetch_unit_logs(unit_name: str, lines: int) -> str:
+async def fetch_unit_logs(unit_name: str, lines: int, *, user_mode: bool = False) -> str:
 
-    cmd = [
-        "journalctl",
+    cmd = ["journalctl"]
+    if user_mode:
+        cmd.append("--user")
+    cmd.extend([
         f"--unit={unit_name}",
         "--no-pager",
         "--output=short",
         f"--lines={lines}",
-    ]
+    ])
     process = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,

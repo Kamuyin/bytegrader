@@ -81,6 +81,7 @@ class SystemdExecutor(BaseExecutor, Configurable):
             properties=properties,
             env_file=env_file,
             slice_name=cfg.unit_slice or None,
+            user_mode=cfg.user_mode,
         )
 
         self.log.debug("Launching systemd-run for %s", unit_name)
@@ -140,8 +141,9 @@ class SystemdExecutor(BaseExecutor, Configurable):
         return cells
 
     async def _wait_for_completion(self, unit_name: str, timeout: int) -> str:
+        user_mode = self.executor_config.user_mode
         for _ in range(timeout):
-            state = await query_unit_state(unit_name)
+            state = await query_unit_state(unit_name, user_mode=user_mode)
             if state in {"dead", "inactive", "failed"}:
                 if state == "failed":
                     self.log.warning("Unit %s finished in failed state", unit_name)
@@ -154,7 +156,7 @@ class SystemdExecutor(BaseExecutor, Configurable):
         from .systemd_runner import fetch_unit_logs
 
         try:
-            journal = await fetch_unit_logs(unit_name, max_lines)
+            journal = await fetch_unit_logs(unit_name, max_lines, user_mode=self.executor_config.user_mode)
         except Exception as exc:
             self.log.error("Failed to collect journal for %s: %s", unit_name, exc)
             journal = ""
