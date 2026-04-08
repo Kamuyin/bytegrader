@@ -69,10 +69,15 @@ class SystemdExecutor(BaseExecutor, Configurable):
             "RuntimeDirectoryMode": "700",
             "RuntimeDirectoryPreserve": "no",
             "KillMode": "control-group",
+            "DynamicUser": "yes",
+            "PrivateTmp": "true",
+            "ProtectHome": "true",
+            "NoNewPrivileges": "true",
+            "RestrictAddressFamilies": "AF_INET AF_INET6",
         }
 
         workdir = Path(cfg.working_directory)
-        workdir.mkdir(parents=True, exist_ok=True)
+        workdir.mkdir(mode=0o700, parents=True, exist_ok=True)
 
         command = build_systemd_run_command(
             unit_name=unit_name,
