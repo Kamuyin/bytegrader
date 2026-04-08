@@ -3,7 +3,7 @@ name: Publish systemd executor to PyPI
 on:
   push:
     tags:
-      - 'v*'
+      - 'systemd-v*'
 
 jobs:
   build-and-publish:
