@@ -37,8 +37,8 @@ class HubApiClient:
     @property
     def service_url(self) -> str:
         explicit_url = os.getenv("BYTEGRADER_SERVICE_EXTERNAL_URL")
-            if explicit_url:
-                return explicit_url
+        if explicit_url:
+            return explicit_url
 
         hub_host = os.getenv("JUPYTERHUB_HOST", "127.0.0.1")
 
