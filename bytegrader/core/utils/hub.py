@@ -36,6 +36,10 @@ class HubApiClient:
 
     @property
     def service_url(self) -> str:
+        explicit_url = os.getenv("BYTEGRADER_SERVICE_EXTERNAL_URL")
+            if explicit_url:
+                return explicit_url
+
         hub_host = os.getenv("JUPYTERHUB_HOST", "127.0.0.1")
 
         if not hub_host:
@@ -47,8 +51,10 @@ class HubApiClient:
                 host_only = host_part.split(":")[0]
                 hub_host = host_only
 
-        constructed_url = f"http://{hub_host}:8000/services/bytegrader"
-        return constructed_url
+        port = os.getenv("JUPYTERHUB_PROXY_PORT", "")
+        port_suffix = f":{port}" if port else ""
+
+        return f"http://{hub_host}{port_suffix}/services/bytegrader"
 
     def query_hub_service(
         self,
