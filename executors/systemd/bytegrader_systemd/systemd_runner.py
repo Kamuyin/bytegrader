@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import os
 import re
 from pathlib import Path
@@ -13,12 +12,7 @@ ENV_KEY_PATTERN = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 def ensure_private_directory(path: Path) -> Path:
 
     path.mkdir(mode=0o700, parents=True, exist_ok=True)
-    current_mode = path.stat().st_mode & 0o777
-    if current_mode != 0o700:
-        logging.getLogger(__name__).warning(
-            "Adjusting permissions on %s from %o to 0o700", path, current_mode
-        )
-        os.chmod(path, 0o700)
+    os.chmod(path, 0o700)
     return path
 
 
