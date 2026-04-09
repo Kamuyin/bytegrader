@@ -1,6 +1,6 @@
 [project]
 name = "bytegrader-executor-systemd"
-version = "0.0.6"
+version = "0.0.7"
 description = "Systemd-based executor package for BYTEGrader"
 readme = "README.md"
 license = "BSD-3-Clause"
