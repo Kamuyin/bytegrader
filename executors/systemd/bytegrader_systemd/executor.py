@@ -21,6 +21,7 @@ from .systemd_runner import (
     launch_transient_unit,
     query_unit_state,
     render_environment_file,
+    stop_unit,
 )
 
 
@@ -33,6 +34,8 @@ class SystemdExecutor(BaseExecutor, Configurable):
         super().__init__(**kwargs)
         self.log = logging.getLogger("SystemdExecutor")
         self.executor_config = config or SystemdExecutorConfig(parent=self)
+        self._active_unit_name: str | None = None
+        self._active_bundle: JobBundle | None = None
 
     async def execute_cell(self, cell_source, globals_dict=None):
         raise NotImplementedError("SystemdExecutor only supports notebook-level execution")
@@ -51,7 +54,16 @@ class SystemdExecutor(BaseExecutor, Configurable):
         bundle.prepare_result_file()
 
         unit_name = cfg.unit_name_template.format(job_id=bundle.job_id)
+        self._active_unit_name = unit_name
+        self._active_bundle = bundle
 
+        try:
+            return await self._run_unit(bundle, unit_name, cfg)
+        finally:
+            self._active_unit_name = None
+            self._active_bundle = None
+
+    async def _run_unit(self, bundle: JobBundle, unit_name: str, cfg: SystemdExecutorConfig):
         bundle_mount = "/tmp/bundle"
 
         env_dir = ensure_private_directory(Path(cfg.runtime_directory_root))
@@ -166,6 +178,18 @@ class SystemdExecutor(BaseExecutor, Configurable):
             bundle.cleanup()
 
         return cells
+
+    async def cleanup(self) -> None:
+        unit_name = self._active_unit_name
+        bundle = self._active_bundle
+        if unit_name:
+            self.log.warning("Cleaning up unit %s after cancellation", unit_name)
+            try:
+                await stop_unit(unit_name, user_mode=self.executor_config.user_mode)
+            except Exception as exc:
+                self.log.error("Failed to stop unit %s: %s", unit_name, exc)
+        if bundle and not self.executor_config.preserve_job_artifacts:
+            bundle.cleanup()
 
     async def _wait_for_completion(self, unit_name: str, timeout: int) -> str:
         user_mode = self.executor_config.user_mode
