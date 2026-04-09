@@ -1,4 +1,4 @@
-from traitlets import Bool, Integer, Unicode
+from traitlets import Bool, Dict, Integer, Unicode
 from traitlets.config import Configurable
 
 
@@ -69,4 +69,11 @@ class SystemdExecutorConfig(Configurable):
     journal_max_lines = Integer(
         200,
         help="Limit the number of journald log lines captured when a unit fails.",
+    ).tag(config=True)
+
+    extra_unit_properties = Dict(
+        {},
+        help=(
+            "Additional systemd unit properties passed to the transient unit. "
+        ),
     ).tag(config=True)

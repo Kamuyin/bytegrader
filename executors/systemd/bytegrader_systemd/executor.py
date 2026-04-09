@@ -84,9 +84,10 @@ class SystemdExecutor(BaseExecutor, Configurable):
             "PrivateTmp": "true",
             "ProtectHome": "true",
             "NoNewPrivileges": "true",
-            "RestrictAddressFamilies": "AF_UNIX AF_INET AF_INET6",
-            "PrivateNetwork": "yes",
+            "IPAddressDeny": "any",
+            "IPAddressAllow": ["localhost"],
             "BindPaths": [f"{bundle.bundle_dir}:{bundle_mount}"],
+            **cfg.extra_unit_properties,
         }
 
         workdir = Path(runtime_home)
