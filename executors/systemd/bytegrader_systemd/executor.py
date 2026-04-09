@@ -84,7 +84,8 @@ class SystemdExecutor(BaseExecutor, Configurable):
             "PrivateTmp": "true",
             "ProtectHome": "true",
             "NoNewPrivileges": "true",
-            "RestrictAddressFamilies": "AF_INET AF_INET6",
+            "RestrictAddressFamilies": "AF_UNIX AF_INET AF_INET6",
+            "PrivateNetwork": "yes",
             "BindPaths": [f"{bundle.bundle_dir}:{bundle_mount}"],
         }
 
@@ -158,7 +159,7 @@ class SystemdExecutor(BaseExecutor, Configurable):
             for record in cells.values():
                 if record.get("error") is None:
                     record["error"] = {"message": "Execution failed"}
-                record.setdefault("success", False)
+                record["success"] = False
 
         if not cfg.preserve_job_artifacts:
             bundle.cleanup()

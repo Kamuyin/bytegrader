@@ -36,6 +36,7 @@ def run_notebook(bundle_dir: Path, result_filename: str) -> dict[str, Any]:
     status = "ok"
     error_info: dict[str, Any] | None = None
 
+    kernel_crashed = False
     try:
         executed = client.execute()
     except CellExecutionError as exc:
@@ -43,6 +44,7 @@ def run_notebook(bundle_dir: Path, result_filename: str) -> dict[str, Any]:
         status = "error"
         error_info = {"message": str(exc)}
     except Exception as exc:
+        kernel_crashed = True
         executed = nb
         status = "error"
         error_info = {"message": str(exc)}
@@ -79,11 +81,18 @@ def run_notebook(bundle_dir: Path, result_filename: str) -> dict[str, Any]:
                     "traceback": trace_text,
                 }
 
-        cell_results[cell_id] = {
-            "success": error_output is None,
-            "output": "".join(flat_outputs),
-            "error": error_output,
-        }
+        if kernel_crashed:
+            cell_results[cell_id] = {
+                "success": False,
+                "output": "".join(flat_outputs),
+                "error": {"message": error_info["message"] if error_info else "Kernel crashed"},
+            }
+        else:
+            cell_results[cell_id] = {
+                "success": error_output is None,
+                "output": "".join(flat_outputs),
+                "error": error_output,
+            }
 
     payload = {
         "cells": cell_results,
