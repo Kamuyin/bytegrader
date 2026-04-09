@@ -55,12 +55,20 @@ class SystemdExecutor(BaseExecutor, Configurable):
         bundle_mount = "/tmp/bundle"
 
         env_dir = ensure_private_directory(Path(cfg.runtime_directory_root))
+        runtime_home = f"/run/{bundle.job_id}"
         env_file = render_environment_file(
             env_dir,
             unit_name,
             {
                 "BYTEGRADER_JOB_ID": bundle.job_id,
                 "BYTEGRADER_BUNDLE": bundle_mount,
+                "HOME": runtime_home,
+                "XDG_CACHE_HOME": runtime_home,
+                "XDG_CONFIG_HOME": runtime_home,
+                "XDG_DATA_HOME": runtime_home,
+                "JUPYTER_CONFIG_DIR": runtime_home,
+                "JUPYTER_DATA_DIR": runtime_home,
+                "IPYTHONDIR": runtime_home,
             },
         )
 
@@ -80,7 +88,7 @@ class SystemdExecutor(BaseExecutor, Configurable):
             "BindPaths": [f"{bundle.bundle_dir}:{bundle_mount}"],
         }
 
-        workdir = Path(f"/run/{bundle.job_id}")
+        workdir = Path(runtime_home)
 
         command = build_systemd_run_command(
             unit_name=unit_name,
@@ -132,12 +140,21 @@ class SystemdExecutor(BaseExecutor, Configurable):
         failure_detected = (
             final_state in {"failed", "timeout"}
             or return_code != 0
-            or results_payload.get("status") == "error"
+            or results_payload.get("status") in {"error", "missing"}
+            or not results_payload.get("cells")
         )
 
         if failure_detected:
             journal = await self._collect_journal(unit_name, cfg.journal_max_lines)
             results_payload["metadata"]["journal"] = journal
+            self.log.error(
+                "Unit %s failed (state=%s, rc=%s, status=%s).\nRunner output:\n%s",
+                unit_name,
+                final_state,
+                return_code,
+                results_payload.get("status"),
+                journal or "<no journal output>",
+            )
             for record in cells.values():
                 if record.get("error") is None:
                     record["error"] = {"message": "Execution failed"}
