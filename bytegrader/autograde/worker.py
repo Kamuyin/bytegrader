@@ -1,3 +1,4 @@
+import asyncio
 import enum
 import json
 import logging
@@ -128,7 +129,25 @@ class AutogradingWorker:
                 #grade_cells = [cell for cell in notebook.cells if cell.is_grade]
                 #cell_ids = [cell.id for cell in grade_cells]
 
-                results = await self.executor.execute_notebook(nb, [cell.id for cell in notebook.cells])
+                timeout = self.executor.execution_timeout or None
+                try:
+                    results = await asyncio.wait_for(
+                        self.executor.execute_notebook(nb, [cell.id for cell in notebook.cells]),
+                        timeout=timeout,
+                    )
+                except asyncio.TimeoutError:
+                    self.log.warning(
+                        f"Job {job.id} timed out after {timeout}s for notebook {notebook.id}"
+                    )
+                    await self.executor.cleanup()
+                    results = {
+                        cell.id: {
+                            "success": False,
+                            "output": "",
+                            "error": f"Execution timed out after {timeout} seconds",
+                        }
+                        for cell in notebook.cells
+                    }
                 for cell_id, result in results.items():
                     orig_cell = next((c for c in notebook.cells if c.id == cell_id), None)
                     if not orig_cell:
